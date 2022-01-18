@@ -25,6 +25,12 @@ jobs:
       - id: set-matrix
         run: echo "::set-output name=matrix::{\"manifests\":[{\"arch\":\"amd64\",\"release\":\"focal\",\"file\":\"Dockerfile\",\"platform\":\"linux/amd64\"},{\"arch\":\"aarch64\",\"release\":\"focal\",\"file\":\"Dockerfile.aarch64\",\"platform\":\"linux/arm/v8\"}]}"
 
+      - run: |
+          cat <<EOF
+          Matrix Ouput:
+          ${{ fromJSON(steps.set-matrix.outputs.matrix) }}
+          EOF
+
   build-docker-image:
     needs: create-build-matrix
     runs-on: ubuntu-latest
