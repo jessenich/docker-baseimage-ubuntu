@@ -6,7 +6,6 @@ on:
       - "v*"
 
 env:
-  TARGET_PLATFORMS: linux/amd64,linux/arm64/v8,linux/arm/v7
   GHCR_URL: ghcr.io
   GHCR_LIBRARY: jessenich
   GHCR_REPO: baseimage-ubuntu
@@ -24,7 +23,7 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - id: set-matrix
-        run: echo "::set-output name=matrix::{\"manifests\":[{\"arch\":\"amd64\",\"release\":\"focal\",\"file\":\"Dockerfile\"},{\"arch\":\"aarch64\",\"release\":\"focal\",\"file\":\"Dockerfile.aarch64\"}]}"
+        run: echo "::set-output name=matrix::{\"manifests\":[{\"arch\":\"amd64\",\"release\":\"focal\",\"file\":\"Dockerfile\",\"platform\":\"linux/amd64\"},{\"arch\":\"aarch64\",\"release\":\"focal\",\"file\":\"Dockerfile.aarch64\",\"platform\":\"linux/arm/v8\"}]}"
 
   build-docker-image:
     needs: create-build-matrix
@@ -101,7 +100,7 @@ jobs:
             ARCH=${{ matrix.arch }}
             OVERLAY_ARCH=${{ matrix.arch }}
             TZ=America/New_York
-          platforms: ${{ env.TARGET_PLATFORMS }}
+          platforms: ${{ matrix.platform }}
           pull: true
           push: true
           tags: ${{ steps.meta.outputs.tags }}
