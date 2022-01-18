@@ -23,10 +23,10 @@ jobs:
     strategy:
       matrix:
         release-name: [ 'focal' ]
-        arch: [ '', '.aarch64', '.armhf']
+        arch: [ '', '.aarch64', ]
       fail-fast: false
 
-    name: "Build Ubuntu - Version: ${{ matrix.alpine-version }} | Arch: ${{ matrix.arch }}"
+    name: "Build Ubuntu - Release: ${{ matrix.release-name }} | Arch: ${{ matrix.arch }}"
     permissions:
       contents: read
       packages: write
