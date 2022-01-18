@@ -19,29 +19,51 @@ jobs:
   create-build-matrix:
     name: "Create Build Matrix"
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        param-file: [ "./.github/workflows/push-docker-image-params.json" ]
+      fail-fast: true
     outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      matrix: ${{ steps.return-matrix.outputs.MATRIX }}
     steps:
-      - id: set-matrix
-        run: echo "::set-output name=matrix::{\"manifests\":[{\"arch\":\"amd64\",\"release\":\"focal\",\"file\":\"Dockerfile\",\"platform\":\"linux/amd64\"},{\"arch\":\"aarch64\",\"release\":\"focal\",\"file\":\"Dockerfile.aarch64\",\"platform\":\"linux/arm/v8\"}]}"
+      - id: read-matrix-file
+        name: Read Matrix from Parameter File
+        run: |
+          FILE_CONTENTS="$(cat ${{ matrix.param-file }})"
+          echo "::set-output name=MATRIX::$FILE_CONTENTS"
 
+      - id: return-matrix
+        name: Return JSON Formatted Build Matrix
+        run: |
+          # INLINE="${{ steps.print-matrix.outputs.matrix }}"
+          FILE_CONTENTS="${{ steps.read-matrix-file.outputs.matrix }}"
+          if [[ -n "$INLINE" ]]; then
+            echo "::set-output name=MATRIX::$INLINE";
+          elif [[ -n "$FILE_CONTENTS" ]]; then
+            echo "::set-output name=MATRIX::$FILE_CONTENTS";
+          else
+            return -1;
+          fi
+          
   print-build-matrix:
     name: Print Build Matrix
+    needs: create-build-matrix
     runs-on: ubuntu-latest
-    outputs:
+    strategy:
       matrix: ${{ jobs.create-build-matrix.outputs.matrix }}
     steps:
       - name: Matrix Output
         run: echo "${{ toJSON(fromJSON(steps.set-matrix.outputs.matrix)) }}"
 
   build-docker-image:
+    name: "Build Ubuntu - Release: ${{ matrix.release }} | Arch: ${{ matrix.arch }}"
     needs: create-build-matrix
     runs-on: ubuntu-latest
     strategy:
       matrix: ${{ fromJSON(jobs.create-build-matrix.outputs.matrix) }}
       fail-fast: false
 
-    name: "Build Ubuntu - Release: ${{ matrix.release }} | Arch: ${{ matrix.arch }}"
+    
     permissions:
       contents: read
       packages: write

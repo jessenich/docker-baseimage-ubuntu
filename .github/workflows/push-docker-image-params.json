@@ -1,0 +1,14 @@
+[
+    {
+        "arch": "amd64",
+        "release": "focal",
+        "file": "Dockerfile",
+        "platform": "linux/amd64"
+    },
+    {
+        "arch": "aarch64",
+        "release": "focal",
+        "file": "Dockerfile.aarch64",
+        "platform": "linux/arm/v8"
+    }
+]
