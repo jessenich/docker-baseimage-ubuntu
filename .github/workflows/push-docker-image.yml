@@ -24,6 +24,7 @@ jobs:
       matrix:
         release-name: [ 'focal' ]
         arch: [ '', '.aarch64', '.armhf']
+      fail-fast: false
 
     name: "Build Ubuntu - Version: ${{ matrix.alpine-version }} | Arch: ${{ matrix.arch }}"
     permissions:

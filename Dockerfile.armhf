@@ -4,22 +4,16 @@ FROM alpine:3.11 as build_rootfs
 ENV REL=focal
 ENV ARCH=armhf
 # install packages
-RUN \
- apk add --no-cache \
+RUN apk add --no-cache \
         bash \
         curl \
         tzdata \
         xz
 
 # grab base tarball
-RUN \
- mkdir /root-out && \
- curl -o \
-	/rootfs.tar.gz -L \
-	https://partner-images.canonical.com/core/${REL}/current/ubuntu-${REL}-core-cloudimg-${ARCH}-root.tar.gz && \
- tar xf \
-        /rootfs.tar.gz -C \
-        /root-out
+RUN mkdir /root-out && \
+ 	curl -o /rootfs.tar.gz -L https://partner-images.canonical.com/core/${REL}/current/ubuntu-${REL}-core-cloudimg-${ARCH}-root.tar.gz && \
+ 	tar xf /rootfs.tar.gz -C /root-out
 
 # Runtime stage
 FROM scratch
@@ -40,17 +34,15 @@ ARG OVERLAY_ARCH="arm"
 # add s6 overlay
 ADD https://github.com/just-containers/s6-overlay/releases/download/${OVERLAY_VERSION}/s6-overlay-${OVERLAY_ARCH}-installer /tmp/
 RUN chmod +x /tmp/s6-overlay-${OVERLAY_ARCH}-installer && /tmp/s6-overlay-${OVERLAY_ARCH}-installer / && rm /tmp/s6-overlay-${OVERLAY_ARCH}-installer
-COPY patch/ /tmp/patch
 
 # set environment variables
 ARG DEBIAN_FRONTEND="noninteractive"
 ENV HOME="/root" \
-LANGUAGE="en_US.UTF-8" \
-LANG="en_US.UTF-8" \
-TERM="xterm"
+	ANGUAGE="en_US.UTF-8" \
+	LANG="en_US.UTF-8" \
+	TERM="xterm"
 
-RUN \
-	echo 'deb http://archive.ubuntu.com/ubuntu-ports/ focal main restricted' > /etc/apt/sources.list && \
+RUN echo 'deb http://archive.ubuntu.com/ubuntu-ports/ focal main restricted' > /etc/apt/sources.list && \
 	echo 'deb http://archive.ubuntu.com/ubuntu-ports/ focal-updates main restricted' >> /etc/apt/sources.list && \
 	echo 'deb http://archive.ubuntu.com/ubuntu-ports/ focal universe multiverse' >> /etc/apt/sources.list && \
 	echo 'deb http://archive.ubuntu.com/ubuntu-ports/ focal-updates universe multiverse' >> /etc/apt/sources.list && \
@@ -82,8 +74,8 @@ RUN \
 	patch \
 	tzdata && \
  locale-gen en_US.UTF-8 && \
- useradd -u 911 -U -d /config -s /bin/false jessenich && \
- usermod -G users abc && \
+ useradd -u 1000 -U -d /config -s /usr/bin/zsh jessenich && \
+ usermod -G users jessenich && \
  mkdir -p \
 	/app \
 	/config \
