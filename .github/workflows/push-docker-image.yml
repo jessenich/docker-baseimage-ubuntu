@@ -11,9 +11,6 @@ env:
   GHCR_REPO: baseimage-ubuntu
   DOCKERHUB_LIBRARY: jessenich91
   DOCKERHUB_REPO: baseimage-ubuntu
-  LABELS: |
-    maintainer=Jesse N. <jesse@keplerdev.com>
-    org.opencontainers.image.source=https://github.com/jessenich/docker-alpine/
 
 jobs:
   create-build-matrix:
@@ -38,8 +35,10 @@ jobs:
           # INLINE="${{ steps.print-matrix.outputs.matrix }}"
           FILE_CONTENTS="${{ steps.read-matrix-file.outputs.matrix }}"
           if [[ -n "$INLINE" ]]; then
+            echo "Found inline matrix params..."
             echo "::set-output name=MATRIX::$INLINE";
           elif [[ -n "$FILE_CONTENTS" ]]; then
+            echo "Found file matrix contents"
             echo "::set-output name=MATRIX::$FILE_CONTENTS";
           else
             return -1;
@@ -50,17 +49,19 @@ jobs:
     needs: create-build-matrix
     runs-on: ubuntu-latest
     strategy:
-      matrix: ${{ jobs.create-build-matrix.outputs.matrix }}
+      matrix: ${{ needs.create-build-matrix.outputs.matrix }}
     steps:
-      - name: Matrix Output
+      - name: Pretty Print Matrix
         run: echo "${{ toJSON(fromJSON(steps.set-matrix.outputs.matrix)) }}"
 
   build-docker-image:
     name: "Build Ubuntu - Release: ${{ matrix.release }} | Arch: ${{ matrix.arch }}"
-    needs: create-build-matrix
+    needs: 
+      - create-build-matrix
+      - print-build-matrix
     runs-on: ubuntu-latest
     strategy:
-      matrix: ${{ fromJSON(jobs.create-build-matrix.outputs.matrix) }}
+      matrix: ${{ fromJSON(needs.create-build-matrix.outputs.matrix) }}
       fail-fast: false
 
     
@@ -104,7 +105,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Docker meta
+      - name: Docker Meta
         id: meta
         uses: docker/metadata-action@v3
         env:
@@ -129,7 +130,7 @@ jobs:
           build-args: |
             REL=${{ matrix.release }}
             ARCH=${{ matrix.arch }}
-            OVERLAY_ARCH=${{ matrix.arch }}
+            OVERLAY_ARCH=${{ maltrix.arch }}
             TZ=America/New_York
           platforms: ${{ matrix.platform }}
           pull: true
