@@ -13,7 +13,7 @@ trim_trailing_whitespace = false
 
 [{Dockerfile*,**.yml}]
 indent_style = space
-indent_size = 2
+indent_size = 4
 
 [{**.sh,root/etc/cont-init.d/**,root/etc/services.d/**}]
 indent_style = space

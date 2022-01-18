@@ -9,8 +9,8 @@ fi
 
 COMMAND="${COMMAND:-"command -v"}";
 PACKAGE_MANAGER=${PACKAGE_MANAGER:-"$(test "$COMMAND apt-get" && echo 'apt-get' || echo 'apk')}";
-updater="${updater:-"$PACKAGE_MANAGER update"}";
-installer="${installer:-"$(test "$PACKAGE_MANAGER -eq apt-get" && echo "apt-get install -y --no-install-recommends" || echo "apk add --no-cache")"}"};
+local -r updater="${updater:-"$PACKAGE_MANAGER update"}";
+local -r installer="${installer:-"$(test "$PACKAGE_MANAGER -eq apt-get" && echo "apt-get install -y --no-install-recommends" || echo "apk add --no-cache")"}";
 
 # Check for curl
 if [ ! -f /usr/bin/curl ] || [ ! -f /usr/bin/jq ]; then
@@ -58,8 +58,8 @@ for DOCKER_MOD in "${DOCKER_MODS[@]}"; do
     fi
     FILENAME="${USERNAME}.${REPO}.${TAG}"
     AUTH_URL="https://auth.docker.io/token?service=registry.docker.io&scope=repository:${ENDPOINT}:pull"
-    MANIFEST_URL="https://registry-1.docker.io/v2/${ENDPOINT}/manifests/${TAG}"
-    BLOB_URL="https://registry-1.docker.io/v2/${ENDPOINT}/blobs/"
+    MANIFEST_URL="https://docker.io/v2/${ENDPOINT}/manifests/${TAG}"
+    BLOB_URL="https://docker.io/v2/${ENDPOINT}/blobs/"
     MODE="dockerhub"
   fi
   # Kill off modification logic if any of the usernames are banned
@@ -67,29 +67,28 @@ for DOCKER_MOD in "${DOCKER_MODS[@]}"; do
   IFS=$'\n'
   BLACKLIST=(${BLACKLIST})
   for BANNED in "${BLACKLIST[@]}"; do
-    if [ "${BANNED}" == "${USERNAME,,}" ]; then
+    if [ "$BANNED" == "$USERNAME,," ]; then
       if [ -z ${RUN_BANNED_MODS+x} ]; then
-        echo "[mod-init] ${DOCKER_MOD} is banned from use due to reported abuse aborting mod logic"
+        echo "[mod-init] $DOCKER_MOD is banned from use due to reported abuse aborting mod logic"
         exit 0
       else
-        echo "[mod-init] You have chosen to run banned mods ${DOCKER_MOD} will be applied"
+        echo "[mod-init] You have chosen to run banned mods $DOCKER_MOD will be applied"
       fi
     fi
   done
-  echo "[mod-init] Applying ${DOCKER_MOD} files to container"
+  echo "[mod-init] Applying $DOCKER_MOD files to container"
   # Get Dockerhub token for api operations
-  TOKEN="$(curl -sSL--header 'GET' "${AUTH_URL}" | jq -r '.token')"
+  TOKEN="$(curl -sSL--header 'GET' "$AUTH_URL" | jq -r '.token')"
 
   # Determine first and only layer of image
-  SHALAYER=$(get_blob_sha "${MODE}" "${TOKEN}" "${MANIFEST_URL}")
+  SHALAYER=$(get_blob_sha "$MODE" "$TOKEN" "$MANIFEST_URL")
 
   # Check if we have allready applied this layer
-  if [ -f "/${FILENAME}" ] && [ "${SHALAYER}" == "$(cat /${FILENAME})" ]; then
-    echo "[mod-init] ${DOCKER_MOD} at ${SHALAYER} has been previously applied skipping"
+  if [ -f "/$FILENAME" ] && [ "$SHALAYER" == "$(cat /$FILENAME)" ]; then
+    echo "[mod-init] $DOCKER_MOD at $SHALAYER has been previously applied skipping"
   else
     # Download and extract layer to /
-    curl -sSL --request GET --header "Authorization: Bearer ${TOKEN}" "${BLOB_URL}${SHALAYER}" | tar xz -C /
-    
-    echo ${SHALAYER} > "/${FILENAME}"
+    curl -sSL --request GET --header "Authorization: Bearer $TOKEN" "$BLOB_URL$SHALAYER" | tar xz -C /
+    echo $SHALAYER > "/$FILENAME"
   fi
 done

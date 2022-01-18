@@ -1,8 +1,6 @@
+FROM alpine:3.11 as build_rootfs
 ARG REL=focal
 ARG ARCH=amd64
-
-# Updated to 3.14, officially supported version by linuxserver is 3.11
-FROM alpine:3.11 as build_rootfs
 
 # install packages
 RUN apk add --no-cache \
@@ -27,7 +25,7 @@ LABEL \
 	build_date=$BUILD_DATE \
 	version=$VERSION \
 	maintainer="jessenich <https://github.com/jessenich>" \
-	org.opencontainers.image.source="https://github.com/jessenich/docker-ubuntu-base"
+	org.opencontainers.image.source="https://github.com/jessenich/docker-baseimage-ubuntu"
 
 # set version for s6 overlay
 ARG OVERLAY_VERSION="v2.2.0.3"
@@ -36,7 +34,6 @@ ARG OVERLAY_ARCH="amd64"
 # add s6 overlay
 ADD "https://github.com/just-containers/s6-overlay/releases/download/${OVERLAY_VERSION}/s6-overlay-${OVERLAY_ARCH}-installer" /tmp/
 RUN chmod +x "/tmp/s6-overlay-${OVERLAY_ARCH}-installer" && "/tmp/s6-overlay-${OVERLAY_ARCH}-installer" / && rm "/tmp/s6-overlay-${OVERLAY_ARCH}-installer"
-COPY patch/ /tmp/patch
 
 # set environment variables
 ARG DEBIAN_FRONTEND="noninteractive"
@@ -83,7 +80,7 @@ RUN set -xe && \
 	locale-gen en_US.UTF-8 && \
 	useradd -u 1000 -U -s "$(command -v zsh)" jessenich && \
 	usermod -G users jessenich && \
-	chsh --shell zsh && \
+	chsh --shell "$(command -v zsh)" && \
 	mkdir -p /app /config /defaults && \
 	mv /usr/bin/with-contenv /usr/bin/with-contenvb && \
 	patch -u /etc/s6/init/init-stage2.patch -i /tmp/patch/etc/s6/init/init-stage2.patch && \

@@ -1,4 +1,4 @@
-FROM alpine:3.11 as rootfs-stage
+FROM alpine:3.11 as build_rootfs
 
 # environment
 ENV REL=focal
@@ -23,11 +23,15 @@ RUN \
 
 # Runtime stage
 FROM scratch
-COPY --from=rootfs-stage /root-out/ /
-ARG BUILD_DATE
+COPY --from=build_rootfs /root-out/ /
+ARG BUILD_DATE="${BUILD_DATE:-date +%D}"
 ARG VERSION
-LABEL build_version="Linuxserver.io version:- ${VERSION} Build-date:- ${BUILD_DATE}"
-LABEL maintainer="TheLamer"
+
+LABEL \
+	build_date=$BUILD_DATE \
+	version=$VERSION \
+	maintainer="jessenich <https://github.com/jessenich>" \
+	org.opencontainers.image.source="https://github.com/jessenich/docker-baseimage-ubuntu"
 
 # set version for s6 overlay
 ARG OVERLAY_VERSION="v2.2.0.3"
@@ -45,9 +49,6 @@ LANGUAGE="en_US.UTF-8" \
 LANG="en_US.UTF-8" \
 TERM="xterm"
 
-# copy sources
-COPY sources.list.arm /etc/apt/
-
 RUN \
 	echo 'deb http://archive.ubuntu.com/ubuntu-ports/ focal main restricted' > /etc/apt/sources.list && \
 	echo 'deb http://archive.ubuntu.com/ubuntu-ports/ focal-updates main restricted' >> /etc/apt/sources.list && \
@@ -55,53 +56,33 @@ RUN \
 	echo 'deb http://archive.ubuntu.com/ubuntu-ports/ focal-updates universe multiverse' >> /etc/apt/sources.list && \
 	echo 'deb http://archive.ubuntu.com/ubuntu-ports/ focal-security main restricted' >> /etc/apt/sources.list && \
 	echo 'deb http://archive.ubuntu.com/ubuntu-ports/ focal-security universe multiverse' >> /etc/apt/sources.list && \
- echo "**** Ripped from Ubuntu Docker Logic ****" && \
  set -xe && \
- echo '#!/bin/sh' \
-	> /usr/sbin/policy-rc.d && \
- echo 'exit 101' \
-	>> /usr/sbin/policy-rc.d && \
- chmod +x \
-	/usr/sbin/policy-rc.d && \
+ echo '#!/bin/sh' > /usr/sbin/policy-rc.d && \
+ echo 'exit 101' >> /usr/sbin/policy-rc.d && \
+ chmod +x /usr/sbin/policy-rc.d && \
  dpkg-divert --local --rename --add /sbin/initctl && \
- cp -a \
-	/usr/sbin/policy-rc.d \
-	/sbin/initctl && \
- sed -i \
-	's/^exit.*/exit 0/' \
-	/sbin/initctl && \
- echo 'force-unsafe-io' \
-	> /etc/dpkg/dpkg.cfg.d/docker-apt-speedup && \
- echo 'DPkg::Post-Invoke { "rm -f /var/cache/apt/archives/*.deb /var/cache/apt/archives/partial/*.deb /var/cache/apt/*.bin || true"; };' \
-	> /etc/apt/apt.conf.d/docker-clean && \
- echo 'APT::Update::Post-Invoke { "rm -f /var/cache/apt/archives/*.deb /var/cache/apt/archives/partial/*.deb /var/cache/apt/*.bin || true"; };' \
-	>> /etc/apt/apt.conf.d/docker-clean && \
- echo 'Dir::Cache::pkgcache ""; Dir::Cache::srcpkgcache "";' \
-	>> /etc/apt/apt.conf.d/docker-clean && \
- echo 'Acquire::Languages "none";' \
-	> /etc/apt/apt.conf.d/docker-no-languages && \
- echo 'Acquire::GzipIndexes "true"; Acquire::CompressionTypes::Order:: "gz";' \
-	> /etc/apt/apt.conf.d/docker-gzip-indexes && \
- echo 'Apt::AutoRemove::SuggestsImportant "false";' \
-	> /etc/apt/apt.conf.d/docker-autoremove-suggests && \
+ cp -a /usr/sbin/policy-rc.d /sbin/initctl && \
+ sed -i 's/^exit.*/exit 0/' /sbin/initctl && \
+ echo 'force-unsafe-io' > /etc/dpkg/dpkg.cfg.d/docker-apt-speedup && \
+ echo 'DPkg::Post-Invoke { "rm -f /var/cache/apt/archives/*.deb /var/cache/apt/archives/partial/*.deb /var/cache/apt/*.bin || true"; };' > /etc/apt/apt.conf.d/docker-clean && \
+ echo 'APT::Update::Post-Invoke { "rm -f /var/cache/apt/archives/*.deb /var/cache/apt/archives/partial/*.deb /var/cache/apt/*.bin || true"; };' >> /etc/apt/apt.conf.d/docker-clean && \
+ echo 'Dir::Cache::pkgcache ""; Dir::Cache::srcpkgcache "";' >> /etc/apt/apt.conf.d/docker-clean && \
+ echo 'Acquire::Languages "none";' > /etc/apt/apt.conf.d/docker-no-languages && \
+ echo 'Acquire::GzipIndexes "true"; Acquire::CompressionTypes::Order:: "gz";' > /etc/apt/apt.conf.d/docker-gzip-indexes && \
+ echo 'Apt::AutoRemove::SuggestsImportant "false";' > /etc/apt/apt.conf.d/docker-autoremove-suggests && \
  mkdir -p /run/systemd && \
- echo 'docker' \
-	> /run/systemd/container && \
- echo "**** install apt-utils and locales ****" && \
+ echo 'docker' > /run/systemd/container && \
  apt-get update && \
  apt-get install -y \
 	apt-utils \
 	locales && \
- echo "**** install packages ****" && \
  apt-get install -y \
 	curl \
 	gnupg \
 	patch \
 	tzdata && \
- echo "**** generate locale ****" && \
  locale-gen en_US.UTF-8 && \
- echo "**** create abc user and make our folders ****" && \
- useradd -u 911 -U -d /config -s /bin/false abc && \
+ useradd -u 911 -U -d /config -s /bin/false jessenich && \
  usermod -G users abc && \
  mkdir -p \
 	/app \
