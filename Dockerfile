@@ -78,10 +78,12 @@ RUN set -xe && \
 		curl \
 		gnupg \
 		patch \
-		tzdata && \
+		tzdata \
+		zsh && \
 	locale-gen en_US.UTF-8 && \
-	useradd -u 1000 -U -d /config -s /bin/false jessenich && \
+	useradd -u 1000 -U -s "$(command -v zsh)" jessenich && \
 	usermod -G users jessenich && \
+	chsh --shell zsh && \
 	mkdir -p /app /config /defaults && \
 	mv /usr/bin/with-contenv /usr/bin/with-contenvb && \
 	patch -u /etc/s6/init/init-stage2 -i /tmp/patch/etc/s6/init/init-stage2.patch && \
