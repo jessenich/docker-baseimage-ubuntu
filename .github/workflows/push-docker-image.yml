@@ -25,17 +25,14 @@ jobs:
       - id: set-matrix
         run: echo "::set-output name=matrix::{\"manifests\":[{\"arch\":\"amd64\",\"release\":\"focal\",\"file\":\"Dockerfile\",\"platform\":\"linux/amd64\"},{\"arch\":\"aarch64\",\"release\":\"focal\",\"file\":\"Dockerfile.aarch64\",\"platform\":\"linux/arm/v8\"}]}"
 
-      - run: |
-          cat <<EOF
-          Matrix Ouput:
-          ${{ fromJSON(steps.set-matrix.outputs.matrix) }}
-          EOF
+      - name: Matrix Output
+        run: echo "${{ toJSON(fromJSON(steps.set-matrix.outputs.matrix)) }}"
 
   build-docker-image:
     needs: create-build-matrix
     runs-on: ubuntu-latest
     strategy:
-      matrix: ${{fromJSON(needs.create-build-matrix.outputs.matrix)}}
+      matrix: ${{ fromJSON(needs.create-build-matrix.outputs.matrix) }}
       fail-fast: false
 
     name: "Build Ubuntu - Release: ${{ matrix.release }} | Arch: ${{ matrix.arch }}"
