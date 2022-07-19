@@ -1,4 +1,4 @@
-FROM alpine:3.11 as build_rootfs
+FROM alpine:3.16.1 as build_rootfs
 ARG REL=focal
 ARG ARCH=amd64
 
