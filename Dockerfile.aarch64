@@ -1,4 +1,4 @@
-FROM alpine:3.11 as build_rootfs
+FROM alpine:3.17 as build_rootfs
 ENV REL=focal
 ENV ARCH=arm64
 
